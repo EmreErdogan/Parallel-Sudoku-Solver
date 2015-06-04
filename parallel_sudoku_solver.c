@@ -275,9 +275,24 @@ void get_box_cells(int matrix[9][9], int x, int y, int box[9]){
 int get_single_intersection(int avs_row[9], int avs_col[9], int avs_box[9]){
 	int i;
 	int val = 0;
+	int intersection_values[10] = {-1, 0, 0, 0, 0, 0, 0, 0, 0, 0};
 
 	for(i=0; i<9; ++i){
-		if(avs_row[i] > 0 && avs_row[i] == avs_col[i] && avs_row[i] == avs_box[i]){
+		if(avs_row[i] > 0){
+			intersection_values[avs_row[i]]++;
+		}
+		if(avs_col[i] > 0){
+			intersection_values[avs_col[i]]++;
+		}
+		if(avs_box[i] > 0){
+			intersection_values[avs_box[i]]++;
+		}
+
+	}
+
+	// now retrieve the single intersection value
+	for(i=1; i<=9; ++i){
+		if(intersection_values[i] == 3){
 			if(val > 0){
 				// an intersecting value already exists. 
 				// so, it means there is no single intersecting value accross all arrays
@@ -285,7 +300,7 @@ int get_single_intersection(int avs_row[9], int avs_col[9], int avs_box[9]){
 				// (the length of the intersection set of the three arrays is greater than 1)
 				return 0; 
 			}
-			val = avs_row[i];
+			val = i;
 		}
 	}
 
