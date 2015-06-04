@@ -67,15 +67,16 @@ int main(int argc, char** argv){
 		int count_avs_box;
 		int single_common_value;
 
-		// test it
-		// print_board(board);
+		printf("Initial puzzle:\n");
+		print_board(board);
 
 		while(!solved){
 			for(i=0; i<9 && !solved; ++i){
 				for (j=0; j<9 && !solved; ++j){
 					if(is_empty_cell(board[i][j])){
 						// send tasks to workers
-						printf("Sending tasks to workers. (x,y) = (%d,%d)\n", i, j);						
+						
+						// printf("Sending tasks to workers. (x,y) = (%d,%d)\n", i, j);						
 
 						// 1. send this row to ROW WORKER
 						get_row_cells(board, i, row);
@@ -104,19 +105,14 @@ int main(int argc, char** argv){
 						// check if the puzzle is solved and send the information to the workers
 						solved = is_solved(board);
 						MPI_Bcast(&solved, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-						MPI_Barrier(MPI_COMM_WORLD);
-
-						if(solved){
-							printf("Sudoku has been solved.\n\n");
-							print_board(board);
-						}
+						
 					}
 				}
 			}
 		}
 
 		// if we came up to this location, then the puzzle must have been solved.
-		printf("Sudoku has been solved.\n\n");
+		printf("Sudoku has been solved.\n");
 		print_board(board);
 
 
@@ -131,16 +127,16 @@ int main(int argc, char** argv){
 
 			if(rank == WORKER_ROW){
 				MPI_Recv(&local_search_space, 9, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_ROW, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				printf("ROW WORKER received task for row: ");
-				print_array(local_search_space);
+				// printf("ROW WORKER received task for row: ");
+				// print_array(local_search_space);
 			} else if(rank == WORKER_COL){
 				MPI_Recv(&local_search_space, 9, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_COL, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				printf("COL WORKER received task for col: ");
-				print_array(local_search_space);
+				// printf("COL WORKER received task for col: ");
+				// print_array(local_search_space);
 			} else if(rank == WORKER_BOX) {
 				MPI_Recv(&local_search_space, 9, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_BOX, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
-				printf("BOX WORKER received task for box: ");
-				print_array(local_search_space);
+				// printf("BOX WORKER received task for box: ");
+				// print_array(local_search_space);
 			} else {
 				// no more workers needed
 			}						
@@ -155,7 +151,7 @@ int main(int argc, char** argv){
 				// seeking for val
 				for(j=0; j<9; ++j){
 					if(local_search_space[j] == val){
-						continue; // val is already used. we need an unused value
+						break; // val is already used. we need an unused value
 					}
 				}
 				if(j == 9){
@@ -178,7 +174,6 @@ int main(int argc, char** argv){
 
 			// keep receiving tasks until the puzzle is solved
 			MPI_Bcast(&solved, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-			MPI_Barrier(MPI_COMM_WORLD);
 		}
 	}
 
