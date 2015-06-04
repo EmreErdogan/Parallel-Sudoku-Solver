@@ -74,6 +74,8 @@ int main(int argc, char** argv){
 				for (j=0; j<9 && !solved; ++j){
 					if(is_empty_cell(board[i][j])){
 						// send tasks to workers
+						printf("Sending tasks to workers. (x,y) = (%d,%d)\n", i, j);						
+
 						// 1. send this row to ROW WORKER
 						get_row_cells(board, i, row);
 						MPI_Send(&row, 9, MPI_INT, WORKER_ROW, TAG_TASK_ASSIGNMENT_ROW, MPI_COMM_WORLD);
@@ -100,6 +102,11 @@ int main(int argc, char** argv){
 							// check if the puzzle is solved and send the information to the workers
 							solved = is_solved(board);
 							MPI_Bcast(&solved, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+
+							if(solved){
+								printf("Sudoku has been solved.\n\n");
+								print_board(board);
+							}
 						}
 						// else: no solution for this cell, yet. so we'll go with next cell
 					}
@@ -122,14 +129,16 @@ int main(int argc, char** argv){
 		while(!solved){
 
 			if(rank == WORKER_ROW){
-				MPI_Recv(&local_search_space, 1, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_ROW, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				MPI_Recv(&local_search_space, 9, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_ROW, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			} else if(rank == WORKER_COL){
-				MPI_Recv(&local_search_space, 1, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_COL, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				MPI_Recv(&local_search_space, 9, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_COL, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			} else if(rank == WORKER_BOX) {
-				MPI_Recv(&local_search_space, 1, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_BOX, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				MPI_Recv(&local_search_space, 9, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_BOX, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
 			} else {
 				// no more workers needed
 			}
+
+			printf("Worker-%d received task for (x,y) = (%d,%d)\n", rank, i, j);						
 
 			count = 0;
 			// find available values (unused values. i.e. if the array is "4 0 5 1 9 0 0 6 7", then available values are 2, 3, and 8)
