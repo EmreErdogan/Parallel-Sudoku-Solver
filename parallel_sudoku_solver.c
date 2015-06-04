@@ -267,6 +267,7 @@ void get_box_cells(int matrix[9][9], int x, int y, int box[9]){
 	for(i=i_start; i<i_end; ++i){
 		for(j=j_start; j<j_end; ++j){
 			box[counter] = matrix[i][j];
+			counter++;
 		}
 	}
 }
