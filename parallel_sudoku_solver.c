@@ -23,6 +23,7 @@
 #define TAG_TASK_COMPLETED_BOX		6
 
 void print_board(int matrix[9][9]);
+void print_array(int array[9]);
 int is_solved(int matrix[9][9]);
 void get_row_cells(int matrix[9][9], int x, int row[9]);
 void get_col_cells(int matrix[9][9], int y, int col[9]);
@@ -98,17 +99,17 @@ int main(int argc, char** argv){
 						if(single_common_value != 0){
 							// this is the value that we've been looking for
 							board[i][j] = single_common_value;
-
-							// check if the puzzle is solved and send the information to the workers
-							solved = is_solved(board);
-							MPI_Bcast(&solved, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
-
-							if(solved){
-								printf("Sudoku has been solved.\n\n");
-								print_board(board);
-							}
 						}
-						// else: no solution for this cell, yet. so we'll go with next cell
+						
+						// check if the puzzle is solved and send the information to the workers
+						solved = is_solved(board);
+						MPI_Bcast(&solved, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+						MPI_Barrier(MPI_COMM_WORLD);
+
+						if(solved){
+							printf("Sudoku has been solved.\n\n");
+							print_board(board);
+						}
 					}
 				}
 			}
@@ -130,15 +131,19 @@ int main(int argc, char** argv){
 
 			if(rank == WORKER_ROW){
 				MPI_Recv(&local_search_space, 9, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_ROW, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				printf("ROW WORKER received task for row: ");
+				print_array(local_search_space);
 			} else if(rank == WORKER_COL){
 				MPI_Recv(&local_search_space, 9, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_COL, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				printf("COL WORKER received task for col: ");
+				print_array(local_search_space);
 			} else if(rank == WORKER_BOX) {
 				MPI_Recv(&local_search_space, 9, MPI_INT, MASTER, TAG_TASK_ASSIGNMENT_BOX, MPI_COMM_WORLD, MPI_STATUS_IGNORE);
+				printf("BOX WORKER received task for box: ");
+				print_array(local_search_space);
 			} else {
 				// no more workers needed
-			}
-
-			printf("Worker-%d received task for (x,y) = (%d,%d)\n", rank, i, j);						
+			}						
 
 			count = 0;
 			// find available values (unused values. i.e. if the array is "4 0 5 1 9 0 0 6 7", then available values are 2, 3, and 8)
@@ -173,6 +178,7 @@ int main(int argc, char** argv){
 
 			// keep receiving tasks until the puzzle is solved
 			MPI_Bcast(&solved, 1, MPI_INT, MASTER, MPI_COMM_WORLD);
+			MPI_Barrier(MPI_COMM_WORLD);
 		}
 	}
 
@@ -198,6 +204,14 @@ void print_board(int matrix[9][9]){
 		printf("|\n");
 	}
 	printf("-------------------------------\n");
+}
+
+void print_array(int array[9]){
+	int i;
+	for(i=0; i<9; ++i){
+		printf(" %d", array[i]);
+	}
+	printf("\n");
 }
 
 int is_solved(int matrix[9][9]){
